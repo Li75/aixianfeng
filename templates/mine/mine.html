@@ -22,7 +22,7 @@
                 <p>
                     <span class="glyphicon glyphicon-user"></span>
                     <a href="{% url 'app:login' %}">
-                        {{ user.name | default:'未登录' }}
+                        {{ user.username | default:'未登录' }}
                     </a>
                 </p>
                 <p>

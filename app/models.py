@@ -134,7 +134,7 @@ class User(models.Model):
     #密码
     password = models.CharField(max_length=256)
     #手机号
-    phone = models.IntegerField()
+    phone = models.CharField(max_length=100)
     #头像
     img = models.CharField(max_length=40)
     #等级

@@ -2,6 +2,7 @@ import hashlib
 import random
 import time
 
+from django.http import JsonResponse
 from django.shortcuts import render, redirect
 
 # Create your views here.
@@ -97,12 +98,23 @@ def cart(request):
     return render(request, 'cart/cart.html')
 
 
+# def mine(request):
+#     token = request.session.get('token')
+#     # userid = cache.get(token)
+#     user = None
+#     if user:
+#         user = User.objects.get(token=token)
+#     return render(request, 'mine/mine.html',context={'user':user})
+
 def mine(request):
+    # 获取
     token = request.session.get('token')
+    userid = cache.get(token)
     user = None
-    if token:
-        user = User.objects.get(pk=token)
-    return render(request, 'mine/mine.html',context={'user':user})
+    if userid:
+        user = User.objects.get(pk=userid)
+
+    return render(request, 'mine/mine.html', context={'user':user})
 
 
 # def base(request):
@@ -122,10 +134,12 @@ def generate_token():
     return md5.hexdigest()
 
 
+
 def register(request):
     if request.method == 'GET':
-        return render(request,'mine/register.html')
+        return render(request, 'mine/register.html')
     elif request.method == 'POST':
+
         username = request.POST.get('username')
         password = generate_password(request.POST.get('password'))
         phone = request.POST.get('phone')
@@ -135,16 +149,56 @@ def register(request):
         user.password = password
         user.phone = phone
         user.save()
-
+        # 状态保持
         token = generate_token()
+        cache.set(token, user.id, 60*60*24*3)
         request.session['token'] = token
+
         return redirect('app:mine')
 
 
 def login(request):
-    return render(request,'mine/login.html')
+    if request.method == 'GET':
+        return render(request,'mine/login.html')
+    elif request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        back = request.COOKIES.get('back')
+        users = User.objects.filter(username=username)
+        if users.exists():#同户存在
+            user = users.first()
+            if user.password == generate_password(password):
+                token = generate_token()
+                cache.set(token, user.id, 60 * 60 * 24 * 3)
+                request.session['token'] = token
+
+                if back == 'mine':
+                    return redirect('app:mine')
+                else:
+                    return redirect('app:cart')
+            else:
+                return render(request,'mine/login.html',context={'pwd_err':'密码错误!'})
+        else:
+            return render(request,'mine/login.html',context={'user_err':'用户不存在!'})
+
 
 
 def logout(request,):
     request.session.flush()
     return redirect('app:mine')
+
+
+def checkusername(request):
+    username = request.GET.get('username')
+    users = User.objects.filter(username=username)
+    if users.exists():
+        response_data = {
+            'status': 1,
+            'msg': '账号可以使用!'
+        }
+    else:
+        response_data = {
+            'status': 0,
+            'msg': '账号不可以使用!'
+        }
+    return JsonResponse(response_data)

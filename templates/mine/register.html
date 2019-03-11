@@ -27,26 +27,43 @@
         <form action="{% url 'app:register' %}" method="post">
             {% csrf_token %}
 
-            <div class="input-group">
-                <span class="input-group-addon">用户名</span>
-                <input type="text" class="form-control" placeholder="请输入你的用户名" name="username">
+
+            <div class="form-group has-feedback" id="username">
+                <div class="input-group">
+                    <span class="input-group-addon">用户名</span>
+                    <input type="text" class="form-control" placeholder="请输入用户名" name="username">
+                </div>
+                <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
             </div>
 
-            <div class="input-group">
-                <span class="input-group-addon">密码</span>
-                <input type="password" class="form-control" placeholder="6~10位数密码" name="password">
+
+            <div class="form-group has-feedback" id="password">
+                <div class="input-group">
+                    <span class="input-group-addon">密码</span>
+                    <input type="password" class="form-control" placeholder="6~10位数密码" name="password">
+                </div>
+                <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
             </div>
 
-            <div class="input-group">
-                <span class="input-group-addon">确认密码</span>
-                <input type="password" class="form-control" placeholder="6~10位数密码">
-            </div>
 
-            <div class="input-group">
-                <span class="input-group-addon">手机号</span>
-                <input type="text" class="form-control" placeholder="请输入你的手机号" name="phone" maxlength="11">
-            </div>
+{#            <div class="form-group has-feedback" id="password-d">#}
+{#                <div class="input-group">#}
+{#                    <span class="input-group-addon">确认密码</span>#}
+{#                    <input type="password" class="form-control" placeholder="6~10位数密码" id="password-t"#}
+{#                           tabindex="0" data-toggle="popover" data-trigger="focus" data-placement="bottom"#}
+{#                           data-content="两次密码不一致">#}
+{#                </div>#}
+{#                <span class="glyphicon form-control-feedback" aria-hidden="true"></span>#}
+{#            </div>#}
 
+
+            <div class="form-group has-feedback" id="phone">
+                <div class="input-group">
+                    <span class="input-group-addon">手机号</span>
+                    <input type="text" class="form-control" placeholder="请输入手机号" name="phone">
+                </div>
+                <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+            </div>
             <input type="submit" value="注册" id="subButton">
         </form>
     </div>
