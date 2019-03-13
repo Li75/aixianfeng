@@ -8,7 +8,7 @@ from django.shortcuts import render, redirect
 # Create your views here.
 from django.core.cache import cache
 
-from app.models import Wheel, Nav, Mustbuy, Shop, Foodtype, Goods, User
+from app.models import Wheel, Nav, Mustbuy, Shop, Foodtype, Goods, User, Cart, Order, OrderGoods
 
 
 def home(request):
@@ -98,13 +98,6 @@ def cart(request):
     return render(request, 'cart/cart.html')
 
 
-# def mine(request):
-#     token = request.session.get('token')
-#     # userid = cache.get(token)
-#     user = None
-#     if user:
-#         user = User.objects.get(token=token)
-#     return render(request, 'mine/mine.html',context={'user':user})
 
 def mine(request):
     # 获取
@@ -117,8 +110,6 @@ def mine(request):
     return render(request, 'mine/mine.html', context={'user':user})
 
 
-# def base(request):
-#     return render(request,'base/base.html')
 
 
 def generate_password(param):
@@ -202,3 +193,131 @@ def checkusername(request):
             'msg': '账号不可以使用!'
         }
     return JsonResponse(response_data)
+
+
+def addcart(request):
+    token = request.session.get('token')
+    response_data = {}
+
+    if token:
+        userid = cache.get(token)
+        if userid:
+            user = User.objects.get(pk=userid)
+            goodsid =request.GET.get('goodsid')
+            goods = Goods.objects.get(pk=goodsid)
+
+            carts = Cart.objects.filter(user=user).filter(goods=goods)
+            if carts.exists():
+                cart = carts.first()
+                cart.number = cart.number + 1
+                cart.save()
+            else:
+                cart = Cart()
+                cart.user = user
+                cart.goods = goods
+                cart.number = 1
+                cart.save()
+
+            response_data['status'] = 1
+            response_data['number'] = cart.number
+            response_data['msg'] = '添加{}购物车成功:{}'.format(cart.goods.productlongname,cart.number)
+            return JsonResponse(response_data)
+
+
+def subcart(request):
+    goodsid = request.GET.get('goodsid')
+    goods = Goods.objects.get(pk=goodsid)
+
+    token = request.session.get('token')
+    userid = cache.get(token)
+    user = User.objects.get(pk=userid)
+
+    cart = Cart.objects.filter(user=user).filter(goods=goods).first()
+    cart.number = cart.number -1
+    cart.save()
+
+    response_data = {
+        'msg':'删除商品成功!',
+        'status':1,
+        'number':cart.number
+    }
+    return JsonResponse(response_data)
+
+
+def generate_identifier():
+    temp = str(time.time()) + str(random.random())
+    return temp
+
+
+def makeorder(request):
+    token = request.session.get('token')
+    userid = cache.get(token)
+    user = User.objects.get(pk=userid)
+
+    order = Order()
+    order.user = user
+    order.identifier = generate_identifier()    #生成订单号
+    order.save()
+
+    carts = user.cart_set.filter(isdelete=True)
+    for cart in carts:
+        orderGoods = OrderGoods()
+        orderGoods.order = order
+        orderGoods.goods = carts.goods
+        orderGoods.number = carts.number
+        orderGoods.save()
+        #生成订单商品移除购物车
+        cart.delete()
+    return render(request,'order/orderdetail.html',context={'order':order})
+
+
+def changecartselect(request):
+    cartid = request.GET.get('cartid')
+    cart = Cart.objects.get(pk=cartid)
+    cart.isselect = not cart.isselect
+    cart.save()
+
+    response_data = {
+        'msg':'状态修改成功!',
+        'status':1,
+        'isselect':cart.isselect
+    }
+    return JsonResponse(response_data)
+
+
+def changeall(request):
+    isall = request.GET.get('isall')
+
+    token = request.session.get('token')
+    userid = cache.get(token)
+    user = User.objects.get(pk=userid)
+    carts = user.cart_set.all()
+
+    if isall == 'true':
+        isall = True
+    else:
+        isall = False
+
+    for cart in carts:
+        cart.isselect = isall
+        cart.save()
+
+    response_data = {
+        'msg':'全选/取消全选  成功',
+        'status':1
+    }
+    return JsonResponse(response_data)
+
+
+def orderlist(request):
+    token = request.GET.get('token')
+    userid = cache.get(token)
+    user = User.objects.get(pk=userid)
+
+    order = user.order_set.all()
+    return render(request,'order/orderlist.html',context={'order':order})
+
+
+def orderdetail(request,identifier):
+    order = Order.objects.filter(identifier=identifier).first()
+    return render(request,'order/orderdetail.html',context={'order':order})
